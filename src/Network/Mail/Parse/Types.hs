@@ -1,18 +1,19 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
 module Network.Mail.Parse.Types where
 
-import Data.Text
-import GHC.Generics
 import qualified Data.ByteString.Char8 as BS
-import Data.Time.Calendar (Day(..))
-import Data.Time.LocalTime (ZonedTime(..), minutesToTimeZone, LocalTime(..),
-  TimeOfDay(..))
+import           Data.Text
+import           Data.Time.Calendar    (Day (..))
+import           Data.Time.LocalTime   (LocalTime (..), TimeOfDay (..),
+                                        ZonedTime (..), minutesToTimeZone)
+import           GHC.Generics
 
 type UID = Integer
 type ErrorMessage = Text
 
 data EmailMessage = EmailMessage {
   emailHeaders :: [Header],
-  emailBodies :: ![EmailBody]
+  emailBodies  :: ![EmailBody]
 } deriving (Show, Eq, Generic)
 
 type MessageId = Text
@@ -29,14 +30,14 @@ data Header = Date ZonedTime
             | Comments Text
             | Keywords [Text]
             | Header {
-                headerName :: !Text,
+                headerName     :: !Text,
                 headerContents :: !Text
             }
             deriving (Eq, Show, Generic)
 
 data EmailAddress = EmailAddress {
   emailAddress :: !Text,
-  emailLabel :: Maybe Text
+  emailLabel   :: Maybe Text
 } deriving (Show, Generic)
 
 instance Eq EmailAddress where
@@ -56,10 +57,10 @@ data EmailBody
   -- and left as a raw sollection of bytes for your enjoyment
   | Attachment {
     attachmentHeaders :: ![Header],
-    attachmentName :: !Text,
-    attachmentBody :: Maybe BS.ByteString,
+    attachmentName    :: !Text,
+    attachmentBody    :: Maybe BS.ByteString,
     -- |Location of the actual filename on disk
-    storageFilename :: Maybe Text
+    storageFilename   :: Maybe Text
   }
   deriving (Eq, Show, Generic)
 

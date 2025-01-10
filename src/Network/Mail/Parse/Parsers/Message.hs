@@ -1,32 +1,33 @@
 module Network.Mail.Parse.Parsers.Message (messageParser) where
 
-import Data.Attoparsec.ByteString
+import           Data.Attoparsec.ByteString
 
-import Data.List (find)
-import Data.Maybe
-import Data.Either (isRight)
-import Control.Monad (liftM)
+import           Data.Either                             (isRight)
+import           Data.List                               (find)
+import           Data.Maybe
 
-import Network.Mail.Parse.Types
-import Network.Mail.Parse.Utils
+import           Network.Mail.Parse.Types
+import           Network.Mail.Parse.Utils
 
-import Network.Mail.Parse.Parsers.Utils (isMIME, discoverAttachment)
-import Network.Mail.Parse.Parsers.Multipart (parseMultipart)
-import Network.Mail.Parse.Decoders.BodyDecoder (decodeBody, decodeTextBody)
-import Network.Mail.Parse.Parsers.Header (headerParser)
-import Network.Mail.Parse.Parsers.HeaderFields
-import qualified Data.Text as T
+import qualified Data.Text                               as T
+import           Network.Mail.Parse.Decoders.BodyDecoder (decodeBody,
+                                                          decodeTextBody)
+import           Network.Mail.Parse.Parsers.Header       (headerParser)
+import           Network.Mail.Parse.Parsers.HeaderFields
+import           Network.Mail.Parse.Parsers.Multipart    (parseMultipart)
+import           Network.Mail.Parse.Parsers.Utils        (discoverAttachment,
+                                                          isMIME)
 
-import qualified Data.ByteString.Char8 as BSC
-import Data.Either.Utils (maybeToEither)
+import qualified Data.ByteString.Char8                   as BSC
 
-import Data.Text.Encoding (encodeUtf8)
-import Data.Either.Combinators (fromRight', fromRight, mapLeft)
+import           Data.Either.Combinators                 (fromRight, fromRight',
+                                                          mapLeft)
+import           Data.Text.Encoding                      (encodeUtf8)
 
-import Codec.MIME.Parse (parseMIMEType)
-import Codec.MIME.Type
+import           Codec.MIME.Parse                        (parseMIMEType)
+import           Codec.MIME.Type
 
-import Control.Monad (join)
+import           Control.Monad                           (join)
 
 parseHeader :: Header -> Header
 parseHeader header = fromRight header parsedHeader
@@ -34,19 +35,19 @@ parseHeader header = fromRight header parsedHeader
         contents     = headerContents header
         references   = parseTextList " " contents >>= mapM parseMessageId
         parsedHeader = case T.toLower hname of
-          "date" -> Date <$> parseTime contents
-          "from" -> From <$> parseEmailAddress contents
-          "reply-to" -> ReplyTo <$> parseEmailAddress contents
-          "to" -> To <$> parseEmailAddressList contents
-          "cc" -> CC <$> parseEmailAddressList contents
-          "bcc" -> BCC <$> parseEmailAddressList contents
-          "message-id" -> MessageId <$> parseMessageId contents
+          "date"        -> Date <$> parseTime contents
+          "from"        -> From <$> parseEmailAddress contents
+          "reply-to"    -> ReplyTo <$> parseEmailAddress contents
+          "to"          -> To <$> parseEmailAddressList contents
+          "cc"          -> CC <$> parseEmailAddressList contents
+          "bcc"         -> BCC <$> parseEmailAddressList contents
+          "message-id"  -> MessageId <$> parseMessageId contents
           "in-reply-to" -> InReplyTo <$> parseMessageId contents
-          "references" -> References <$> references
-          "subject" -> Right $ Subject contents
-          "comments" -> Right $ Comments contents
-          "keywords" -> Keywords <$> parseTextList "," contents
-          _ -> Right header
+          "references"  -> References <$> references
+          "subject"     -> Right $ Subject contents
+          "comments"    -> Right $ Comments contents
+          "keywords"    -> Keywords <$> parseTextList "," contents
+          _             -> Right header
 
 -- |Parses a single message
 messageParser :: Maybe [Header]   -- ^ Headers, if they were already parsed
@@ -82,7 +83,7 @@ mimeParser bodyHeaders = do
       let filename = fromJust isAttachment
       let decodedBody = decodeBody headers body
       return . Right $ Attachment headers filename (Just decodedBody) Nothing
-    else (liftM . liftM) MessageBody $ messageParser (Just headers) (Just bodyHeaders)
+    else (fmap . fmap) MessageBody $ messageParser (Just headers) (Just bodyHeaders)
 
 -- |Parse a set of parts.
 multipartParser :: [Header] -> [BSC.ByteString] -> Either ErrorMessage [EmailBody]
@@ -94,8 +95,8 @@ parseMIME :: [Header] -> BSC.ByteString -> Either ErrorMessage [EmailBody]
 parseMIME headers body = if isRight msgType then
   (case mimeType . fromRight' $ msgType of
     Multipart _ -> multiParsed >>= multipartParser headers
-    Text _ -> Right decodedBody
-    _ -> Left "mimetype not supported")
+    Text _      -> Right decodedBody
+    _           -> Left "mimetype not supported")
   else Right decodedBody
   where msgType = findHeader "Content-Type" headers >>=
           Right . parseMIMEType . headerContents >>=

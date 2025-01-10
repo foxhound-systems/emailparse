@@ -1,11 +1,11 @@
 module Network.Mail.Parse.Parsers.Multipart (parseMultipart) where
 
-import qualified Data.ByteString.Char8 as BSC
-import qualified Data.ByteString as BS
-import Data.Word8
-import Data.Attoparsec.ByteString
+import           Data.Attoparsec.ByteString
+import qualified Data.ByteString            as BS
+import qualified Data.ByteString.Char8      as BSC
+import           Data.Word8
 
-import Network.Mail.Parse.Utils
+import           Network.Mail.Parse.Utils
 
 isBoundaryMatched :: BSC.ByteString -> Int -> Word8 -> Maybe Int
 isBoundaryMatched boundary matchIdx char =

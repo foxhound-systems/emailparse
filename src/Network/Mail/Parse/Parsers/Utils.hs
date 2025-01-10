@@ -1,11 +1,11 @@
 module Network.Mail.Parse.Parsers.Utils where
 
-import Network.Mail.Parse.Types
-import Network.Mail.Parse.Utils
+import           Network.Mail.Parse.Types
+import           Network.Mail.Parse.Utils
 
-import qualified Data.Text as T
-import Data.List
-import Control.Monad (liftM)
+import           Control.Monad            (liftM)
+import           Data.List
+import qualified Data.Text                as T
 
 
 -- |Check if the given headers represent an attachment

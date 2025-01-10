@@ -9,25 +9,25 @@ module Network.Mail.Parse.Parsers.HeaderFields (
   parseMessageId
 ) where
 
-import Network.Mail.Parse.Types
-import Network.Mail.Parse.Decoders.BodyDecoder (transferDecode, encodingToUtf)
+import           Network.Mail.Parse.Decoders.BodyDecoder (encodingToUtf,
+                                                          transferDecode)
+import           Network.Mail.Parse.Types
 
-import Data.Attoparsec.Text
-import qualified Data.Text as T
-import qualified Data.Text.Read as TR
-import qualified Data.Attoparsec.Text as AP
-import Data.Text.Encoding (encodeUtf8)
-import Control.Applicative
-import Data.Maybe
-import qualified Data.Char as C
-import Data.Either (isRight)
-import Data.Either.Combinators (mapLeft, mapBoth)
+import           Control.Applicative
+import           Data.Attoparsec.Text
+import qualified Data.Attoparsec.Text                    as AP
+import qualified Data.Char                               as C
+import           Data.Either                             (fromRight, isRight)
+import           Data.Either.Combinators                 (mapBoth, mapLeft)
+import           Data.Maybe
+import qualified Data.Text                               as T
+import           Data.Text.Encoding                      (encodeUtf8)
+import qualified Data.Text.Read                          as TR
 
-import Data.Either.Unwrap (fromRight)
 
-import Data.Time.Parse (strptime)
-import Data.Time.LocalTime
-import Control.Monad (join, liftM)
+import           Control.Monad                           (join, liftM)
+import           Data.Time.LocalTime
+import           Data.Time.Parse                         (strptime)
 
 -- |Parses a name-addr formatted email
 nameAddrParser :: Parser EmailAddress
@@ -74,9 +74,7 @@ minutesAndHoursToTZ :: Int -> Either T.Text (Int, T.Text) ->
   (Int, T.Text) -> Either T.Text TimeZone
 minutesAndHoursToTZ direction minutes hours =
     Right $ minutesToTimeZone timezoneMins
-  where knownMinutes  = if isRight minutes
-                          then fst . fromRight $ minutes
-                          else 0
+  where knownMinutes  = either (const 0) fst minutes
         h             = fst hours
         timezoneMins  = direction * (h * 60 + knownMinutes)
 
@@ -84,7 +82,7 @@ zoneToOffset :: T.Text -> Either ErrorMessage TimeZone
 zoneToOffset offset = if offsetH == '+' || offsetH == '-'
   then hours >>= (minutesAndHoursToTZ direction minutes)
   else Right $ minutesToTimeZone . (*60) $ case offset of
-    "UT" -> 0
+    "UT"  -> 0
     "GMT" -> 0
     "EST" -> -5
     "EDT" -> -4
@@ -94,7 +92,7 @@ zoneToOffset offset = if offsetH == '+' || offsetH == '-'
     "MDT" -> -6
     "PST" -> -8
     "PDT" -> -7
-    _ -> 0
+    _     -> 0
   where offsetH = T.head offset
         direction = if offsetH == '+' then 1 else -1
         splitOffset = T.splitAt 2 $ T.tail offset
@@ -126,9 +124,12 @@ timeParser =
     zone <- AP.takeWhile1 (/= ' ')
     let localTime = timeToLocalTime (day, month, year, timeOfDay)
     let timeZone = zoneToOffset zone
-    let result = if isJust localTime && isRight timeZone
-                  then Right $ ZonedTime (fromJust localTime) (fromRight timeZone)
-                  else mapBoth (const "cannot decode timezone") (const defaultZT) timeZone
+    let result =
+            case (localTime, timeZone) of
+              (Just time, Right z) ->
+                   Right $ ZonedTime time z
+
+              _ -> mapBoth (const "cannot decode timezone") (const defaultZT) timeZone
     return result
 
 -- |Parse a time from a header containing time
@@ -172,7 +173,7 @@ parseInlineEncoding = do
   let decoded = mapLeft (const "Count not decode encoding") (transferDecode text encoding) >>= return . (`encodingToUtf` charset)
 
   if T.toLower encoding == "q"
-    then return $ liftM (T.replace "_" " ") decoded
+    then return $ fmap (T.replace "_" " ") decoded
     else return decoded
 
 parseTextBlock :: Parser (Either ErrorMessage T.Text)
@@ -183,9 +184,9 @@ parseTextBlock = do
     then char '?' >> parseInlineEncoding
     else return . Right $ T.empty
 
-  let didDecode = isRight decoded && (not . T.null . fromRight $ decoded)
+  let didDecode = either (const False) (not . T.null) decoded
   let normalizedBefore = if didDecode then T.init before else before
-  return $ liftM (T.append normalizedBefore) decoded
+  return $ fmap (T.append normalizedBefore) decoded
 
 untilEOF :: Parser (Either ErrorMessage T.Text) -> Parser [Either ErrorMessage T.Text]
 untilEOF parser = do

@@ -1,16 +1,15 @@
 module Network.Mail.Parse.Utils where
 
-import Network.Mail.Parse.Types
+import           Network.Mail.Parse.Types
 
-import Data.Attoparsec.ByteString
+import           Data.Attoparsec.ByteString
 import qualified Data.Attoparsec.ByteString as AP
-import qualified Data.ByteString.Char8 as BS
-import Data.Word8
-import Data.List
+import qualified Data.ByteString.Char8      as BS
+import           Data.List
+import           Data.Word8
 
-import Data.Text (Text)
-import qualified Data.Text as T
-import Data.Either.Utils (maybeToEither)
+import           Data.Text                  (Text)
+import qualified Data.Text                  as T
 
 -- |If the previous character was a carriage return and the current
 -- is a line feed, stop parsing
@@ -51,6 +50,9 @@ findHeader hdr headers = maybeToEither notFound header
         eigenHeader = T.toLower hdr
         header      = find (\x -> T.toLower (headerName x) == eigenHeader) headers
 
+maybeToEither :: e -> Maybe a -> Either e a
+maybeToEither err = maybe (Left err) Right
+
 eitherToMaybe :: Either a b -> Maybe b
 eitherToMaybe (Right a) = Just a
-eitherToMaybe (Left _) = Nothing
+eitherToMaybe (Left _)  = Nothing

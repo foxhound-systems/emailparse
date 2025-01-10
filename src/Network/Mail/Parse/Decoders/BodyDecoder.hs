@@ -1,35 +1,36 @@
 module Network.Mail.Parse.Decoders.BodyDecoder where
 
-import qualified Data.ByteString.Char8 as BSC
+import qualified Data.ByteString.Char8                      as BSC
 
-import Codec.MIME.Parse (parseMIMEType)
-import Codec.MIME.Type
+import           Codec.MIME.Parse                           (parseMIMEType)
+import           Codec.MIME.Type
 
-import Data.Either.Combinators (mapLeft, fromRight')
-import Data.Either.Utils (maybeToEither)
-import Data.Either (isRight)
+import           Data.Either                                (isRight)
+import           Data.Either.Combinators                    (fromRight',
+                                                             mapLeft)
 
-import Data.List (find)
+import           Data.List                                  (find)
 
-import Data.Text (Text)
-import qualified Data.Text as T
-import Data.Text.Encoding (decodeUtf8)
-import qualified Data.Text.ICU.Convert as ICU
-import System.IO.Unsafe (unsafePerformIO)
+import           Data.Text                                  (Text)
+import qualified Data.Text                                  as T
+import           Data.Text.Encoding                         (decodeUtf8)
+import qualified Data.Text.ICU.Convert                      as ICU
+import           System.IO.Unsafe                           (unsafePerformIO)
 
-import Network.Mail.Parse.Types
-import Network.Mail.Parse.Decoders.FormatDecoders (qpDec, decodeB64)
-import Network.Mail.Parse.Utils (findHeader)
+import           Network.Mail.Parse.Decoders.FormatDecoders (decodeB64, qpDec)
+import           Network.Mail.Parse.Types
+import           Network.Mail.Parse.Utils                   (findHeader,
+                                                             maybeToEither)
 
 
 -- |Remove transfer encoding from a string of bytes
 transferDecode :: BSC.ByteString -> Text -> Either (BSC.ByteString, BSC.ByteString) BSC.ByteString
 transferDecode body encoding = case T.toLower encoding of
   "quoted-printable" -> qpDec body
-  "q" -> qpDec body
-  "base64" -> decodeB64 body
-  "b" -> decodeB64 body
-  _ -> Right body
+  "q"                -> qpDec body
+  "base64"           -> decodeB64 body
+  "b"                -> decodeB64 body
+  _                  -> Right body
 
 -- |Transform a string of bytes with a given encoding
 -- into a UTF-8 string of bytes

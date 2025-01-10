@@ -1,17 +1,16 @@
 module Network.Mail.Parse.Parsers.Header where
 
-import Network.Mail.Parse.Types
-import Network.Mail.Parse.Utils
-import Network.Mail.Parse.Parsers.HeaderFields (parseText)
+import           Network.Mail.Parse.Parsers.HeaderFields (parseText)
+import           Network.Mail.Parse.Types
+import           Network.Mail.Parse.Utils
 
-import Data.Word8
-import Data.Attoparsec.ByteString
-import qualified Data.Attoparsec.ByteString as AP
-import Data.Text.Encoding (decodeUtf8)
-import Data.Either.Unwrap (fromRight)
-import Data.Either (isRight)
+import           Data.Attoparsec.ByteString
+import qualified Data.Attoparsec.ByteString              as AP
+import           Data.Either                             (fromRight)
+import           Data.Text.Encoding                      (decodeUtf8)
+import           Data.Word8
 
-import qualified Data.ByteString.Char8 as BSC
+import qualified Data.ByteString.Char8                   as BSC
 
 -- |Parses a header
 headerParser :: Parser Header
@@ -25,7 +24,7 @@ headerParser = do
 
   let headerBody = decodeUtf8 . cleanupLines $ headerLine:moreLines
   let parsedBody = parseText headerBody
-  let body = if isRight parsedBody then fromRight parsedBody else headerBody
+  let body = fromRight headerBody parsedBody
 
   return $ Header (decodeUtf8 headerN) body
 

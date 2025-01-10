@@ -4,12 +4,12 @@ module Network.Mail.Parse.Decoders.FormatDecoders (qpDec, decodeB64) where
 -- License: BSD3, found in the LICENSE file
 -- Copied from the Sandi library
 
-import Foreign
-import Foreign.C.Types
-import System.IO.Unsafe as U
-import qualified Data.ByteString as BS
+import qualified Data.ByteString        as BS
+import           Data.ByteString.Unsafe
 import qualified Data.ByteString.Unsafe as BSU
-import Data.ByteString.Unsafe
+import           Foreign
+import           Foreign.C.Types
+import           System.IO.Unsafe       as U
 
 foreign import ccall "static qp.h qp_dec_c"
     c_qp_dec :: Ptr Word8 -> CSize -> Ptr Word8 -> Ptr CSize -> Ptr (Ptr Word8) -> Ptr CSize -> IO CInt
